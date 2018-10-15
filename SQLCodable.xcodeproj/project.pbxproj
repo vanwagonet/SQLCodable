@@ -14,6 +14,9 @@
 		7DF400132172F0C1007E5F81 /* SQLTableDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */; };
 		7DF400152172F8D9007E5F81 /* SQLTableDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400142172F8D9007E5F81 /* SQLTableDecoderTests.swift */; };
 		7DF40022217516FA007E5F81 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DF40021217516FA007E5F81 /* libsqlite3.tbd */; };
+		7DF400242175231E007E5F81 /* SQLDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400232175231E007E5F81 /* SQLDatabase.swift */; };
+		7DF40026217523BC007E5F81 /* SQLError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF40025217523BC007E5F81 /* SQLError.swift */; };
+		7DF4002821752620007E5F81 /* SQLDatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF4002721752620007E5F81 /* SQLDatabaseTests.swift */; };
 		7DF4FFFE2172E840007E5F81 /* SQLCodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DF4FFF42172E840007E5F81 /* SQLCodable.framework */; };
 /* End PBXBuildFile section */
 
@@ -35,6 +38,9 @@
 		7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTableDecoder.swift; sourceTree = "<group>"; };
 		7DF400142172F8D9007E5F81 /* SQLTableDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTableDecoderTests.swift; sourceTree = "<group>"; };
 		7DF40021217516FA007E5F81 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		7DF400232175231E007E5F81 /* SQLDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLDatabase.swift; sourceTree = "<group>"; };
+		7DF40025217523BC007E5F81 /* SQLError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLError.swift; sourceTree = "<group>"; };
+		7DF4002721752620007E5F81 /* SQLDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLDatabaseTests.swift; sourceTree = "<group>"; };
 		7DF4FFF42172E840007E5F81 /* SQLCodable.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SQLCodable.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF4FFF72172E840007E5F81 /* SQLCodable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SQLCodable.h; sourceTree = "<group>"; };
 		7DF4FFF82172E840007E5F81 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -66,6 +72,7 @@
 			children = (
 				7DF400042172E840007E5F81 /* Info.plist */,
 				7DF400022172E840007E5F81 /* SQLCodableTests.swift */,
+				7DF4002721752620007E5F81 /* SQLDatabaseTests.swift */,
 				7DF400142172F8D9007E5F81 /* SQLTableDecoderTests.swift */,
 			);
 			path = SQLCodableTests;
@@ -104,6 +111,8 @@
 				7DF4FFF82172E840007E5F81 /* Info.plist */,
 				7DF4FFF72172E840007E5F81 /* SQLCodable.h */,
 				7DF400102172EFD3007E5F81 /* SQLCodable.swift */,
+				7DF400232175231E007E5F81 /* SQLDatabase.swift */,
+				7DF40025217523BC007E5F81 /* SQLError.swift */,
 				7DF4000E2172E922007E5F81 /* SQLTable.swift */,
 				7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */,
 			);
@@ -220,7 +229,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				7DF400132172F0C1007E5F81 /* SQLTableDecoder.swift in Sources */,
+				7DF400242175231E007E5F81 /* SQLDatabase.swift in Sources */,
 				7DF4000F2172E922007E5F81 /* SQLTable.swift in Sources */,
+				7DF40026217523BC007E5F81 /* SQLError.swift in Sources */,
 				7DF400112172EFD3007E5F81 /* SQLCodable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -230,6 +241,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7DF400152172F8D9007E5F81 /* SQLTableDecoderTests.swift in Sources */,
+				7DF4002821752620007E5F81 /* SQLDatabaseTests.swift in Sources */,
 				7DF400032172E840007E5F81 /* SQLCodableTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

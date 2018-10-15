@@ -2,8 +2,9 @@
 > Can you define SQLite3-persisted models with just `Codable`?
 
 - [x] Generate table definitions
-- [ ] Generate create statements
+- [x] Generate create statements
 - [ ] Generate insert statements
+- [ ] Generate select statements
 - [ ] Generate update statements
 - [ ] Generate delete statements
 - [x] Support `Codable` enums & OptionSet

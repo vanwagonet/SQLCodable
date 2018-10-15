@@ -14,7 +14,7 @@ public struct SQLTable: Equatable {
     public init<Model: SQLCodable>(for type: Model.Type) throws {
         columns = try SQLTableDecoder().decode(Model.self)
         guard let primary = columns.first(where: { $0.name == Model.primaryKey }) else {
-            throw NSError(domain: "SQLCodable", code: 1, userInfo: nil)
+            throw SQLError.noSuchColumn(Model.primaryKey)
         }
         primaryKey = primary
         name = Model.tableName
@@ -39,5 +39,8 @@ public struct SQLColumn: Equatable, Hashable {
 }
 
 public enum SQLColumnType: String {
-    case blob, int, real, text
+    case blob = "BLOB"
+    case int  = "INTEGER"
+    case real = "REAL"
+    case text = "TEXT"
 }
