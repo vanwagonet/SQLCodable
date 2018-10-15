@@ -4,15 +4,22 @@ class SQLTableDecoder: Decoder {
     let codingPath: [CodingKey]
     let userInfo: [CodingUserInfoKey : Any] = [:]
     var columns: [SQLColumn] = []
+    var optional = Set<String>()
+    let parent: SQLTableDecoder?
     var rootReturned = false
 
-    init(codingPath: [CodingKey] = []) {
+    init(codingPath: [CodingKey] = [], parent: SQLTableDecoder? = nil) {
         self.codingPath = codingPath
+        self.parent = parent
     }
 
     func decode<Model: Decodable>(_ type: Model.Type) throws -> [SQLColumn] {
         let _ = try Model(from: self)
         return columns
+    }
+
+    func add(_ type: SQLColumnType, _ name: String) {
+        columns.append(SQLColumn(name: name, optional: optional.contains(name), type: type))
     }
 
     func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
@@ -43,7 +50,6 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
     let decoder: SQLTableDecoder
     let codingPath: [CodingKey]
     let allKeys: [Key] = []
-    var optional = Set<String>()
 
     init(decoder: SQLTableDecoder) {
         self.decoder = decoder
@@ -51,14 +57,13 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
     }
 
     func add(_ type: SQLColumnType, _ key: Key) {
-        let name = key.stringValue
-        decoder.columns.append(SQLColumn(name: name, optional: optional.contains(name), type: type))
+        decoder.add(type, key.stringValue)
     }
 
     func contains(_ key: Key) -> Bool { return true }
 
     func decodeNil(forKey key: Key) throws -> Bool {
-        optional.insert(key.stringValue)
+        decoder.optional.insert(key.stringValue)
         return false // ensures it also asks for the typed value
     }
 
@@ -78,9 +83,8 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
     func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 { add(.int,  key); return 1 }
 
     func decode<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> T {
-        let child = SQLTableDecoder(codingPath: codingPath + [key])
+        let child = SQLTableDecoder(codingPath: codingPath + [key], parent: decoder)
         let tried = try? T(from: child)
-        decoder.columns.append(contentsOf: child.columns)
         if let value = tried { return value }
         if let value = SQLColumn.placeholder(for: T.self) { return value }
         return try T(from: child) // let it throw
@@ -106,7 +110,6 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
 class SQLTableSingleValueDecodingContainer: SingleValueDecodingContainer {
     let decoder: SQLTableDecoder
     let codingPath: [CodingKey]
-    var optional = false
 
     init(decoder: SQLTableDecoder) {
         self.decoder = decoder
@@ -117,11 +120,10 @@ class SQLTableSingleValueDecodingContainer: SingleValueDecodingContainer {
         guard let name = codingPath.last?.stringValue else {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Decoding a single value without a codingPath is not supported"))
         }
-        decoder.columns.append(SQLColumn(name: name, optional: optional, type: type))
+        decoder.parent?.add(type, name)
     }
 
     func decodeNil() -> Bool {
-        optional = true
         return false // ensures it also asks for the typed value
     }
 
@@ -141,9 +143,7 @@ class SQLTableSingleValueDecodingContainer: SingleValueDecodingContainer {
     func decode(_ type: UInt64.Type) throws -> UInt64 { try add(.int);  return 1 }
 
     func decode<T: Decodable>(_ type: T.Type) throws -> T {
-        let child = SQLTableDecoder(codingPath: codingPath)
-        let value = try T(from: child)
-        decoder.columns.append(contentsOf: child.columns)
-        return value
+        let child = SQLTableDecoder(codingPath: codingPath, parent: decoder)
+        return try T(from: child)
     }
 }

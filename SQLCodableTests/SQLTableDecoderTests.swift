@@ -133,4 +133,29 @@ class SQLTableDecoderTests: XCTestCase {
             name: "Enums"
         ))
     }
+
+    struct Options: OptionSet, Codable {
+        let rawValue: UInt8
+
+        static let a = Options(rawValue: 1 << 0)
+        static let b = Options(rawValue: 1 << 1)
+        static let c = Options(rawValue: 1 << 2)
+        static let d = Options(rawValue: 1 << 3)
+    }
+    struct OptionSets: SQLCodable {
+        let o: Options
+        let oo: Options?
+
+        static let primaryKey = CodingKeys.o.stringValue
+    }
+    func testOptionSets() {
+        XCTAssertEqual(try SQLTable(for: OptionSets.self), SQLTable(
+            columns: [
+                SQLColumn(name: "o",  optional: false, type: .int),
+                SQLColumn(name: "oo", optional: true,  type: .int),
+            ],
+            primaryKey: SQLColumn(name: "o", optional: false, type: .int),
+            name: "OptionSets"
+        ))
+    }
 }
