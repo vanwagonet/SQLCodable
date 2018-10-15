@@ -158,4 +158,49 @@ class SQLTableDecoderTests: XCTestCase {
             name: "OptionSets"
         ))
     }
+
+    struct Arrays: SQLCodable {
+        let astr: [String]
+        let oastr: [String]?
+        let aostr: [String?]
+        let aint: [Int]
+        let oaint: [Int]?
+        let aoint: [Int?]
+
+        static let primaryKey = CodingKeys.astr.stringValue
+    }
+    func testArrays() {
+        XCTAssertEqual(try SQLTable(for: Arrays.self), SQLTable(
+            columns: [
+                SQLColumn(name: "astr",  optional: false, type: .text),
+                SQLColumn(name: "oastr", optional: true,  type: .text),
+                SQLColumn(name: "aostr", optional: false, type: .text),
+                SQLColumn(name: "aint",  optional: false, type: .text),
+                SQLColumn(name: "oaint", optional: true,  type: .text),
+                SQLColumn(name: "aoint", optional: false, type: .text),
+            ],
+            primaryKey: SQLColumn(name: "astr", optional: false, type: .text),
+            name: "Arrays"
+        ))
+    }
+
+    struct Inside: Codable {
+        let v: [String]
+    }
+    struct NestedStructs: SQLCodable {
+        let s: Inside
+        let os: Inside?
+
+        static let primaryKey = CodingKeys.s.stringValue
+    }
+    func testNestedStructs() {
+        XCTAssertEqual(try SQLTable(for: NestedStructs.self), SQLTable(
+            columns: [
+                SQLColumn(name: "s",  optional: false, type: .text),
+                SQLColumn(name: "os", optional: true,  type: .text),
+            ],
+            primaryKey: SQLColumn(name: "s", optional: false, type: .text),
+            name: "NestedStructs"
+        ))
+    }
 }

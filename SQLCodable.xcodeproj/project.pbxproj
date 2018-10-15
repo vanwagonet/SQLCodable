@@ -13,6 +13,7 @@
 		7DF400112172EFD3007E5F81 /* SQLCodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400102172EFD3007E5F81 /* SQLCodable.swift */; };
 		7DF400132172F0C1007E5F81 /* SQLTableDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */; };
 		7DF400152172F8D9007E5F81 /* SQLTableDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400142172F8D9007E5F81 /* SQLTableDecoderTests.swift */; };
+		7DF40022217516FA007E5F81 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DF40021217516FA007E5F81 /* libsqlite3.tbd */; };
 		7DF4FFFE2172E840007E5F81 /* SQLCodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DF4FFF42172E840007E5F81 /* SQLCodable.framework */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,7 @@
 		7DF400102172EFD3007E5F81 /* SQLCodable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLCodable.swift; sourceTree = "<group>"; };
 		7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTableDecoder.swift; sourceTree = "<group>"; };
 		7DF400142172F8D9007E5F81 /* SQLTableDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTableDecoderTests.swift; sourceTree = "<group>"; };
+		7DF40021217516FA007E5F81 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		7DF4FFF42172E840007E5F81 /* SQLCodable.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SQLCodable.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF4FFF72172E840007E5F81 /* SQLCodable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SQLCodable.h; sourceTree = "<group>"; };
 		7DF4FFF82172E840007E5F81 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -44,6 +46,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7DF40022217516FA007E5F81 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -68,12 +71,21 @@
 			path = SQLCodableTests;
 			sourceTree = "<group>";
 		};
+		7DF40020217516FA007E5F81 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7DF40021217516FA007E5F81 /* libsqlite3.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7DF4FFEA2172E840007E5F81 = {
 			isa = PBXGroup;
 			children = (
 				7DF4FFF62172E840007E5F81 /* SQLCodable */,
 				7DF400012172E840007E5F81 /* SQLCodableTests */,
 				7DF4FFF52172E840007E5F81 /* Products */,
+				7DF40020217516FA007E5F81 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};

@@ -1,11 +1,11 @@
 import Foundation
 
 public struct SQLTable: Equatable {
-    public let columns: [SQLColumn]
+    public let columns: Set<SQLColumn>
     public let primaryKey: SQLColumn
     public let name: String
 
-    public init(columns: [SQLColumn], primaryKey: SQLColumn, name: String) {
+    public init(columns: Set<SQLColumn>, primaryKey: SQLColumn, name: String) {
         self.columns = columns
         self.primaryKey = primaryKey
         self.name = name
@@ -21,7 +21,7 @@ public struct SQLTable: Equatable {
     }
 }
 
-public struct SQLColumn: Equatable {
+public struct SQLColumn: Equatable, Hashable {
     public let name: String
     public let optional: Bool
     public let type: SQLColumnType

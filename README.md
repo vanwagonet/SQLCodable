@@ -7,7 +7,7 @@
 - [ ] Generate update statements
 - [ ] Generate delete statements
 - [x] Support `Codable` enums & OptionSet
-- [ ] Support nested structs
-- [ ] Support arrays
+- [x] Support nested structs
+- [x] Support arrays
 - [ ] Support indexes
 - [ ] Support foreign keys
