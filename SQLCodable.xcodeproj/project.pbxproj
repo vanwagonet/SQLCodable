@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7DCB7D7A2178F20C001B2DB0 /* SQLRowDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */; };
 		7DF400032172E840007E5F81 /* SQLCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400022172E840007E5F81 /* SQLCodableTests.swift */; };
 		7DF400052172E840007E5F81 /* SQLCodable.h in Headers */ = {isa = PBXBuildFile; fileRef = 7DF4FFF72172E840007E5F81 /* SQLCodable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7DF4000F2172E922007E5F81 /* SQLTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF4000E2172E922007E5F81 /* SQLTable.swift */; };
@@ -31,6 +32,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLRowDecoder.swift; sourceTree = "<group>"; };
 		7DF400022172E840007E5F81 /* SQLCodableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLCodableTests.swift; sourceTree = "<group>"; };
 		7DF400042172E840007E5F81 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7DF4000E2172E922007E5F81 /* SQLTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTable.swift; sourceTree = "<group>"; };
@@ -113,6 +115,7 @@
 				7DF400102172EFD3007E5F81 /* SQLCodable.swift */,
 				7DF400232175231E007E5F81 /* SQLDatabase.swift */,
 				7DF40025217523BC007E5F81 /* SQLError.swift */,
+				7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */,
 				7DF4000E2172E922007E5F81 /* SQLTable.swift */,
 				7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */,
 			);
@@ -230,6 +233,7 @@
 			files = (
 				7DF400132172F0C1007E5F81 /* SQLTableDecoder.swift in Sources */,
 				7DF400242175231E007E5F81 /* SQLDatabase.swift in Sources */,
+				7DCB7D7A2178F20C001B2DB0 /* SQLRowDecoder.swift in Sources */,
 				7DF4000F2172E922007E5F81 /* SQLTable.swift in Sources */,
 				7DF40026217523BC007E5F81 /* SQLError.swift in Sources */,
 				7DF400112172EFD3007E5F81 /* SQLCodable.swift in Sources */,

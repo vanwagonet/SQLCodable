@@ -10,5 +10,5 @@
 - [x] Support `Codable` enums & OptionSet
 - [x] Support nested structs
 - [x] Support arrays
-- [ ] Support indexes
+- [x] Support indexes
 - [ ] Support foreign keys

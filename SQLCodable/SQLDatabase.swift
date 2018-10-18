@@ -1,16 +1,9 @@
 import Foundation
 import SQLite3
 
-public enum SQLValue: Equatable {
-    case blob(Data)
-    case int(Int64)
-    case real(Double)
-    case text(String)
-}
-
 public class SQLDatabase {
     public let fileURL: URL
-    private var db: OpaquePointer? = nil
+    internal var db: OpaquePointer? = nil
 
     public init(at url: URL) {
         self.fileURL = url
@@ -23,7 +16,9 @@ public class SQLDatabase {
 
     func connect() throws {
         guard db == nil else { return }
-        try check(sqlite3_open(fileURL.absoluteString.cString(using: .utf8), &db))
+        let file = fileURL.absoluteString.cString(using: .utf8)
+        let flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
+        try check(sqlite3_open_v2(file, &db, flags, nil))
     }
 
     func disconnect() throws {
@@ -37,37 +32,17 @@ public class SQLDatabase {
         try check(sqlite3_exec(db, sql, nil, nil, nil))
     }
 
-    @discardableResult
-    func query(_ sql: String, callback: (([String: SQLValue]) -> Void)? = nil) throws -> [[String: SQLValue]] {
+    func query<T: Decodable>(_ type: T.Type, sql: String) throws -> [T] {
         try connect()
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
         try check(sqlite3_prepare_v2(db, sql, -1, &statement, nil))
-        var rows = [[String: SQLValue]]()
+        var rows = [T]()
         var isDone = false
         while !isDone {
             switch sqlite3_step(statement) {
             case SQLITE_ROW:
-                var row = [String: SQLValue]()
-                for i in 0..<sqlite3_column_count(statement) {
-                    let name = String(cString: sqlite3_column_name(statement, i))
-                    switch sqlite3_column_type(statement, i) {
-                    case SQLITE_BLOB:
-                        guard let bytes = sqlite3_column_blob(statement, i) else { break }
-                        let count = sqlite3_column_bytes(statement, i)
-                        row[name] = .blob(Data(bytes: bytes, count: Int(count)))
-                    case SQLITE_INTEGER:
-                        row[name] = .int(Int64(sqlite3_column_int(statement, i)))
-                    case SQLITE_FLOAT:
-                        row[name] = .real(Double(sqlite3_column_double(statement, i)))
-                    case SQLITE_TEXT, SQLITE3_TEXT:
-                        row[name] = .text(String(cString: sqlite3_column_text(statement, i)))
-                    default:
-                        break
-                    }
-                }
-                rows.append(row)
-                callback?(row)
+                rows.append(try SQLRowDecoder(statement: statement).decode(T.self))
             case SQLITE_DONE:
                 isDone = true
             case let status:
@@ -78,9 +53,37 @@ public class SQLDatabase {
     }
 
     public func create(table: SQLTable) throws {
-        let columns = table.columns
-            .compactMap { "\($0.name) \($0.type.rawValue) \($0.optional ? "NULL" : "NOT NULL")" }
-            .sorted().joined(separator: ", ")
-        try exec("CREATE TABLE \(table.name) (\(columns), PRIMARY KEY (\(table.primaryKey.name)))")
+        var definitions = table.columns.map { name, col in
+            return "\(name) \(col.type.rawValue) \(col.null ? "NULL" : "NOT NULL")"
+        }.sorted()
+        if !table.primaryKey.isEmpty {
+            definitions.append("PRIMARY KEY (\(table.primaryKey.joined(separator: ", ")))")
+        }
+        try exec("CREATE TABLE \(table.name) (\(definitions.joined(separator: ", ")))")
+
+        for index in table.indexes {
+            try exec("CREATE\(index.unique ? " UNIQUE" : "") INDEX \(index.name) ON \(table.name) (\(index.columns.joined(separator: ", ")))")
+        }
+    }
+
+    public func table<Model: SQLCodable>(for type: Model.Type) throws -> SQLTable? {
+        let columnInfo = try query(SQLColumnInfo.self, sql: "PRAGMA table_info(\(type.tableName))")
+        guard !columnInfo.isEmpty else { return nil }
+        var columns = [String: SQLColumn]()
+        for info in columnInfo {
+            columns[info.name] = SQLColumn(type: info.type, null: !info.notnull)
+        }
+        let primaryKey = columnInfo.filter { $0.pk > 0 } .sorted(by: { $0.pk < $1.pk }) .map { $0.name }
+
+        let indexInfo = try query(SQLIndexInfo.self, sql: "PRAGMA index_list(\(type.tableName))")
+        var indexes = [SQLIndex]()
+        for info in indexInfo {
+            guard info.origin == "c" else { continue }
+            let cols = try query(SQLIndexColumnInfo.self, sql: "PRAGMA index_info(\(info.name))")
+            let columns = cols.sorted(by: { $0.rank < $1.rank }).map { $0.name }
+            indexes.append(SQLIndex(columns: columns, name: info.name, unique: info.unique))
+        }
+
+        return SQLTable(columns: columns, indexes: indexes, name: type.tableName, primaryKey: primaryKey)
     }
 }

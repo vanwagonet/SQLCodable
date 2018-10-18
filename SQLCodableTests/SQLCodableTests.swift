@@ -4,8 +4,14 @@ import XCTest
 class SQLCodableTests: XCTestCase {
     struct Model: SQLCodable {
         let id: UInt = 1
+    }
 
-        static var primaryKey = CodingKeys.id.stringValue
+    func testIndexes() {
+        XCTAssert(Model.indexes.isEmpty)
+    }
+
+    func testPrimaryKey() {
+        XCTAssert(Model.primaryKey.isEmpty)
     }
 
     func testTableName() {

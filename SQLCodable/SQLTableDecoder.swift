@@ -2,9 +2,9 @@ import Foundation
 
 class SQLTableDecoder: Decoder {
     let codingPath: [CodingKey]
-    let userInfo: [CodingUserInfoKey : Any] = [:]
-    var columns = Set<SQLColumn>()
-    var optional = Set<String>()
+    var userInfo: [CodingUserInfoKey: Any] = [:]
+    var columns = [String: SQLColumn]()
+    var nulls = Set<String>()
     let parent: SQLTableDecoder?
     var rootReturned = false
 
@@ -13,13 +13,13 @@ class SQLTableDecoder: Decoder {
         self.parent = parent
     }
 
-    func decode<Model: Decodable>(_ type: Model.Type) throws -> Set<SQLColumn> {
+    func decode<Model: Decodable>(_ type: Model.Type) throws -> [String: SQLColumn] {
         let _ = try Model(from: self)
         return columns
     }
 
-    func add(_ type: SQLColumnType, _ name: String) {
-        columns.insert(SQLColumn(name: name, optional: optional.contains(name), type: type))
+    func add(_ type: SQLColumnType, _ name: CodingKey) {
+        columns[name.stringValue] = SQLColumn(type: type, null: nulls.contains(name.stringValue))
     }
 
     func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
@@ -30,7 +30,7 @@ class SQLTableDecoder: Decoder {
         } else if codingPath.isEmpty {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Only one keyed container supported per codingPath"))
         } else {
-            if let name = codingPath.last?.stringValue { parent?.add(.text, name) }
+            if let name = codingPath.last { parent?.add(.text, name) }
             let container = SQLTableNestedDecodingContainer<Key>(decoder: self)
             return KeyedDecodingContainer(container)
         }
@@ -40,7 +40,7 @@ class SQLTableDecoder: Decoder {
         if codingPath.isEmpty {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Unkeyed containers are not supported at the top level"))
         }
-        if let name = codingPath.last?.stringValue { parent?.add(.text, name) }
+        if let name = codingPath.last { parent?.add(.text, name) }
         return SQLTableUnkeyedDecodingContainer(decoder: self)
     }
 
@@ -63,13 +63,13 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
     }
 
     func add(_ type: SQLColumnType, _ key: Key) {
-        decoder.add(type, key.stringValue)
+        decoder.add(type, key)
     }
 
     func contains(_ key: Key) -> Bool { return true }
 
     func decodeNil(forKey key: Key) throws -> Bool {
-        decoder.optional.insert(key.stringValue)
+        decoder.nulls.insert(key.stringValue)
         return false // ensures it also asks for the typed value
     }
 
@@ -92,7 +92,7 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
         let child = SQLTableDecoder(codingPath: codingPath + [key], parent: decoder)
         let tried = try? T(from: child)
         if let value = tried { return value }
-        if let value = SQLColumn.placeholder(for: T.self) { return value }
+        if let value = SQLTable.placeholder(for: T.self) { return value }
         return try T(from: child) // let it throw
     }
 
@@ -125,7 +125,7 @@ class SQLTableSingleValueDecodingContainer: SingleValueDecodingContainer {
     }
 
     func add(_ type: SQLColumnType) throws {
-        guard let name = codingPath.last?.stringValue else {
+        guard let name = codingPath.last else {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Decoding a single value without a codingPath is not supported"))
         }
         decoder.parent?.add(type, name)
@@ -235,7 +235,7 @@ class SQLTableNestedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerPro
         let child = SQLTableDecoder(codingPath: codingPath + [key], parent: decoder)
         let tried = try? T(from: child)
         if let value = tried { return value }
-        if let value = SQLColumn.placeholder(for: T.self) { return value }
+        if let value = SQLTable.placeholder(for: T.self) { return value }
         return try T(from: child) // let it throw
     }
 

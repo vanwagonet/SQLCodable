@@ -1,30 +1,27 @@
 import Foundation
 
 public struct SQLTable: Equatable {
-    public let columns: Set<SQLColumn>
-    public let primaryKey: SQLColumn
+    public let columns: [String: SQLColumn]
+    public let indexes: [SQLIndex]
     public let name: String
+    public let primaryKey: [String]
 
-    public init(columns: Set<SQLColumn>, primaryKey: SQLColumn, name: String) {
+    internal init(columns: [String: SQLColumn], indexes: [SQLIndex] = [], name: String, primaryKey: [String] = []) {
         self.columns = columns
-        self.primaryKey = primaryKey
+        self.indexes = indexes.sorted(by: { $0.name < $1.name })
         self.name = name
+        self.primaryKey = primaryKey.sorted()
     }
 
-    public init<Model: SQLCodable>(for type: Model.Type) throws {
-        columns = try SQLTableDecoder().decode(Model.self)
-        guard let primary = columns.first(where: { $0.name == Model.primaryKey }) else {
-            throw SQLError.noSuchColumn(Model.primaryKey)
-        }
-        primaryKey = primary
-        name = Model.tableName
+    internal init<Model: SQLCodable>(for type: Model.Type) throws {
+        self.columns = try SQLTableDecoder().decode(type)
+        self.indexes = type.indexes.sorted(by: { $0.name < $1.name })
+        self.name = type.tableName
+        self.primaryKey = type.primaryKey.map { $0.stringValue } .sorted()
+        let allKeys = self.indexes.flatMap { $0.columns } + self.primaryKey
+        let invalidKeys = allKeys.filter { columns[$0] == nil }
+        guard invalidKeys.isEmpty else { throw SQLError.invalidColumns(invalidKeys) }
     }
-}
-
-public struct SQLColumn: Equatable, Hashable {
-    public let name: String
-    public let optional: Bool
-    public let type: SQLColumnType
 
     private static var placeholders: [String: Decodable] = [:]
 
@@ -38,9 +35,42 @@ public struct SQLColumn: Equatable, Hashable {
     }
 }
 
-public enum SQLColumnType: String {
+public struct SQLColumn: Equatable {
+    public let type: SQLColumnType
+    public let null: Bool
+}
+
+public enum SQLColumnType: String, Codable {
     case blob = "BLOB"
     case int  = "INTEGER"
     case real = "REAL"
     case text = "TEXT"
+}
+
+public struct SQLIndex: Equatable, Hashable {
+    public let columns: [String]
+    public let name: String
+    public let unique: Bool
+
+    public static func index(_ name: String, on columns: [CodingKey], unique: Bool = false) -> SQLIndex {
+        return SQLIndex(columns: columns.map { $0.stringValue } .sorted(), name: name, unique: unique)
+    }
+}
+
+struct SQLColumnInfo: Decodable {
+    let name: String
+    let notnull: Bool
+    let pk: Int
+    let type: SQLColumnType
+}
+
+struct SQLIndexInfo: Decodable {
+    let name: String
+    let origin: String
+    let unique: Bool
+}
+
+struct SQLIndexColumnInfo: Decodable {
+    let name: String
+    let rank: Int32
 }

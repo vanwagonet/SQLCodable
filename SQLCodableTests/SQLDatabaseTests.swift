@@ -13,12 +13,18 @@ class SQLDatabaseTests: XCTestCase {
         let id: UInt32
         let name: String?
 
-        static let primaryKey = CodingKeys.id.stringValue
+        static let primaryKey: [CodingKey] = [ CodingKeys.id, CodingKeys.name ]
+        static let indexes: [SQLIndex] = [
+            .index("id", on: [ CodingKeys.id ]),
+            .index("uname", on: [ CodingKeys.name, CodingKeys.id ], unique: true),
+        ]
     }
 
-    func testCreate() {
+    func testCreateTable() {
         let db = SQLDatabase(at: fileURL)
-        XCTAssertNoThrow(try db.create(table: SQLTable(for: Person.self)))
-        XCTAssertEqual(try db.query("SELECT sql FROM sqlite_master WHERE name = 'Person'")[0]["sql"], SQLValue.text("CREATE TABLE Person (id INTEGER NOT NULL, name TEXT NULL, PRIMARY KEY (id))"))
+        let table = try! SQLTable(for: Person.self)
+        XCTAssertNil(try db.table(for: Person.self))
+        XCTAssertNoThrow(try db.create(table: table))
+        XCTAssertEqual(try db.table(for: Person.self), table)
     }
 }
