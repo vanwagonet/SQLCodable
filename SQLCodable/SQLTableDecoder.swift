@@ -3,14 +3,14 @@ import Foundation
 class SQLTableDecoder: Decoder {
     let codingPath: [CodingKey]
     var userInfo: [CodingUserInfoKey: Any] = [:]
+
     var columns = [String: SQLColumn]()
     var nulls = Set<String>()
-    let parent: SQLTableDecoder?
-    var rootReturned = false
+    let root: SQLTableDecoder?
 
-    init(codingPath: [CodingKey] = [], parent: SQLTableDecoder? = nil) {
+    init(root: SQLTableDecoder? = nil, codingPath: [CodingKey] = []) {
         self.codingPath = codingPath
-        self.parent = parent
+        self.root = root
     }
 
     func decode<Model: Decodable>(_ type: Model.Type) throws -> [String: SQLColumn] {
@@ -23,59 +23,57 @@ class SQLTableDecoder: Decoder {
     }
 
     func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
-        if codingPath.isEmpty, !rootReturned {
-            rootReturned = true
-            let container = SQLTableKeyedDecodingContainer<Key>(decoder: self)
-            return KeyedDecodingContainer(container)
-        } else if codingPath.isEmpty {
-            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Only one keyed container supported per codingPath"))
-        } else {
-            if let name = codingPath.last { parent?.add(.text, name) }
-            let container = SQLTableNestedDecodingContainer<Key>(decoder: self)
-            return KeyedDecodingContainer(container)
+        if let root = root, codingPath.count == 1, let name = codingPath.last {
+            root.add(.text, name)
         }
+        let container = SQLTableKeyedDecodingContainer<Key>(root: root ?? self, codingPath: codingPath)
+        return KeyedDecodingContainer(container)
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        if codingPath.isEmpty {
-            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Unkeyed containers are not supported at the top level"))
+        guard !codingPath.isEmpty else {
+            throw SQLError.notRepresentable("An unkeyed container can't be represented as a row.")
         }
-        if let name = codingPath.last { parent?.add(.text, name) }
-        return SQLTableUnkeyedDecodingContainer(decoder: self)
+        if let root = root, codingPath.count == 1, let name = codingPath.last {
+            root.add(.text, name)
+        }
+        return SQLTableUnkeyedDecodingContainer(root: root ?? self, codingPath: codingPath)
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        if codingPath.isEmpty {
-            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Single value containers are not supported at the top level"))
+        guard !codingPath.isEmpty else {
+            throw SQLError.notRepresentable("A single value can't be represented as a row.")
         }
-        return SQLTableSingleValueDecodingContainer(decoder: self)
+        return SQLTableSingleValueDecodingContainer(root: root ?? self, codingPath: codingPath)
     }
 }
 
 class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
-    let decoder: SQLTableDecoder
-    let codingPath: [CodingKey]
     let allKeys: [Key] = []
+    let codingPath: [CodingKey]
 
-    init(decoder: SQLTableDecoder) {
-        self.decoder = decoder
-        self.codingPath = decoder.codingPath
+    let root: SQLTableDecoder
+
+    init(root: SQLTableDecoder, codingPath: [CodingKey]) {
+        self.codingPath = codingPath
+        self.root = root
     }
 
-    func add(_ type: SQLColumnType, _ key: Key) {
-        decoder.add(type, key)
+    func add(_ type: SQLColumnType, _ name: CodingKey) {
+        guard codingPath.isEmpty else { return }
+        root.add(type, name)
     }
 
     func contains(_ key: Key) -> Bool { return true }
 
     func decodeNil(forKey key: Key) throws -> Bool {
-        decoder.nulls.insert(key.stringValue)
+        root.nulls.insert(key.stringValue)
         return false // ensures it also asks for the typed value
     }
 
-    func decode(_ type: String.Type, forKey key: Key) throws -> String { add(.text, key); return "String" }
-    func decode(_ type: Double.Type, forKey key: Key) throws -> Double { add(.real, key); return 1.2 }
-    func decode(_ type: Float.Type,  forKey key: Key) throws -> Float  { add(.real, key); return 1.1 }
+    func decode(_ type: String.Type, forKey key: Key) throws -> String { add(.text, key); return "" }
+    func decode(_ type: Double.Type, forKey key: Key) throws -> Double { add(.real, key); return 1 }
+    func decode(_ type: Float.Type,  forKey key: Key) throws -> Float  { add(.real, key); return 1 }
     func decode(_ type: Bool.Type,   forKey key: Key) throws -> Bool   { add(.int,  key); return true }
     func decode(_ type: Int.Type,    forKey key: Key) throws -> Int    { add(.int,  key); return 1 }
     func decode(_ type: Int8.Type,   forKey key: Key) throws -> Int8   { add(.int,  key); return 1 }
@@ -89,170 +87,129 @@ class SQLTableKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProt
     func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 { add(.int,  key); return 1 }
 
     func decode<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> T {
-        let child = SQLTableDecoder(codingPath: codingPath + [key], parent: decoder)
-        let tried = try? T(from: child)
-        if let value = tried { return value }
-        if let value = SQLTable.placeholder(for: T.self) { return value }
-        return try T(from: child) // let it throw
+        let child = SQLTableDecoder(root: root, codingPath: codingPath + [key])
+        do {
+            return try T(from: child)
+        } catch DecodingError.dataCorrupted(_) {
+            if let value = SQLTable.placeholder(for: T.self) { return value }
+            throw SQLError.missingPlaceholder(type)
+        }
     }
 
     func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
-        add(.blob, key)
-        let container = SQLTableNestedDecodingContainer<NestedKey>(decoder: decoder)
+        add(.text, key)
+        let container = SQLTableKeyedDecodingContainer<NestedKey>(root: root, codingPath: codingPath + [key])
         return KeyedDecodingContainer(container)
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-        throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Nested unkeyed containers are not supported"))
+        add(.text, key)
+        return SQLTableUnkeyedDecodingContainer(root: root, codingPath: codingPath + [key])
     }
 
     func superDecoder() throws -> Decoder {
-        return decoder
+        return root
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
-        return decoder
+        return root
+    }
+}
+
+class SQLTableUnkeyedDecodingContainer: UnkeyedDecodingContainer {
+    let codingPath: [CodingKey]
+    let count: Int? = 0
+    let currentIndex: Int = 0
+    let isAtEnd = true
+
+    let root: SQLTableDecoder
+
+    init(root: SQLTableDecoder, codingPath: [CodingKey]) {
+        self.codingPath = codingPath
+        self.root = root
+    }
+
+    func decodeNil() throws -> Bool { return true }
+    func decode(_ type: String.Type) throws -> String { return "" }
+    func decode(_ type: Double.Type) throws -> Double { return 1 }
+    func decode(_ type: Float.Type)  throws -> Float  { return 1 }
+    func decode(_ type: Bool.Type)   throws -> Bool   { return true }
+    func decode(_ type: Int.Type)    throws -> Int    { return 1 }
+    func decode(_ type: Int8.Type)   throws -> Int8   { return 1 }
+    func decode(_ type: Int16.Type)  throws -> Int16  { return 1 }
+    func decode(_ type: Int32.Type)  throws -> Int32  { return 1 }
+    func decode(_ type: Int64.Type)  throws -> Int64  { return 1 }
+    func decode(_ type: UInt.Type)   throws -> UInt   { return 1 }
+    func decode(_ type: UInt8.Type)  throws -> UInt8  { return 1 }
+    func decode(_ type: UInt16.Type) throws -> UInt16 { return 1 }
+    func decode(_ type: UInt32.Type) throws -> UInt32 { return 1 }
+    func decode(_ type: UInt64.Type) throws -> UInt64 { return 1 }
+
+    func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
+        let child = SQLTableDecoder(root: root, codingPath: codingPath)
+        do {
+            return try T(from: child)
+        } catch DecodingError.dataCorrupted(_) {
+            if let value = SQLTable.placeholder(for: T.self) { return value }
+            throw SQLError.missingPlaceholder(type)
+        }
+    }
+
+    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
+        let container = SQLTableKeyedDecodingContainer<NestedKey>(root: root, codingPath: codingPath)
+        return KeyedDecodingContainer(container)
+    }
+
+    func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
+        return SQLTableUnkeyedDecodingContainer(root: root, codingPath: codingPath)
+    }
+
+    func superDecoder() throws -> Decoder {
+        return root
     }
 }
 
 class SQLTableSingleValueDecodingContainer: SingleValueDecodingContainer {
-    let decoder: SQLTableDecoder
     let codingPath: [CodingKey]
 
-    init(decoder: SQLTableDecoder) {
-        self.decoder = decoder
-        self.codingPath = decoder.codingPath
+    let root: SQLTableDecoder
+
+    init(root: SQLTableDecoder, codingPath: [CodingKey]) {
+        self.codingPath = codingPath
+        self.root = root
     }
 
-    func add(_ type: SQLColumnType) throws {
-        guard let name = codingPath.last else {
-            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Decoding a single value without a codingPath is not supported"))
-        }
-        decoder.parent?.add(type, name)
+    func add(_ type: SQLColumnType) {
+        guard codingPath.count == 1, let name = codingPath.last else { return }
+        root.add(type, name)
     }
 
     func decodeNil() -> Bool {
         return false // ensures it also asks for the typed value
     }
 
-    func decode(_ type: String.Type) throws -> String { try add(.text); return "String" }
-    func decode(_ type: Double.Type) throws -> Double { try add(.real); return 1.2 }
-    func decode(_ type: Float.Type)  throws -> Float  { try add(.real); return 1.1 }
-    func decode(_ type: Bool.Type)   throws -> Bool   { try add(.int);  return true }
-    func decode(_ type: Int.Type)    throws -> Int    { try add(.int);  return 1 }
-    func decode(_ type: Int8.Type)   throws -> Int8   { try add(.int);  return 1 }
-    func decode(_ type: Int16.Type)  throws -> Int16  { try add(.int);  return 1 }
-    func decode(_ type: Int32.Type)  throws -> Int32  { try add(.int);  return 1 }
-    func decode(_ type: Int64.Type)  throws -> Int64  { try add(.int);  return 1 }
-    func decode(_ type: UInt.Type)   throws -> UInt   { try add(.int);  return 1 }
-    func decode(_ type: UInt8.Type)  throws -> UInt8  { try add(.int);  return 1 }
-    func decode(_ type: UInt16.Type) throws -> UInt16 { try add(.int);  return 1 }
-    func decode(_ type: UInt32.Type) throws -> UInt32 { try add(.int);  return 1 }
-    func decode(_ type: UInt64.Type) throws -> UInt64 { try add(.int);  return 1 }
+    func decode(_ type: String.Type) throws -> String { add(.text); return "" }
+    func decode(_ type: Double.Type) throws -> Double { add(.real); return 1 }
+    func decode(_ type: Float.Type)  throws -> Float  { add(.real); return 1 }
+    func decode(_ type: Bool.Type)   throws -> Bool   { add(.int);  return true }
+    func decode(_ type: Int.Type)    throws -> Int    { add(.int);  return 1 }
+    func decode(_ type: Int8.Type)   throws -> Int8   { add(.int);  return 1 }
+    func decode(_ type: Int16.Type)  throws -> Int16  { add(.int);  return 1 }
+    func decode(_ type: Int32.Type)  throws -> Int32  { add(.int);  return 1 }
+    func decode(_ type: Int64.Type)  throws -> Int64  { add(.int);  return 1 }
+    func decode(_ type: UInt.Type)   throws -> UInt   { add(.int);  return 1 }
+    func decode(_ type: UInt8.Type)  throws -> UInt8  { add(.int);  return 1 }
+    func decode(_ type: UInt16.Type) throws -> UInt16 { add(.int);  return 1 }
+    func decode(_ type: UInt32.Type) throws -> UInt32 { add(.int);  return 1 }
+    func decode(_ type: UInt64.Type) throws -> UInt64 { add(.int);  return 1 }
 
     func decode<T: Decodable>(_ type: T.Type) throws -> T {
-        let child = SQLTableDecoder(codingPath: codingPath, parent: decoder)
-        return try T(from: child)
-    }
-}
-
-class SQLTableUnkeyedDecodingContainer: UnkeyedDecodingContainer {
-    let decoder: SQLTableDecoder
-    let codingPath: [CodingKey]
-    let count: Int? = 0
-    let isAtEnd = true
-    let currentIndex: Int = 0
-
-    init(decoder: SQLTableDecoder) {
-        self.decoder = decoder
-        self.codingPath = decoder.codingPath
-    }
-
-    func nope() -> Error {
-        return DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Nested values are not supported"))
-    }
-
-    func decodeNil() throws -> Bool { return true }
-    func decode(_ type: String.Type) throws -> String { throw nope() }
-    func decode(_ type: Double.Type) throws -> Double { throw nope() }
-    func decode(_ type: Float.Type)  throws -> Float  { throw nope() }
-    func decode(_ type: Bool.Type)   throws -> Bool   { throw nope() }
-    func decode(_ type: Int.Type)    throws -> Int    { throw nope() }
-    func decode(_ type: Int8.Type)   throws -> Int8   { throw nope() }
-    func decode(_ type: Int16.Type)  throws -> Int16  { throw nope() }
-    func decode(_ type: Int32.Type)  throws -> Int32  { throw nope() }
-    func decode(_ type: Int64.Type)  throws -> Int64  { throw nope() }
-    func decode(_ type: UInt.Type)   throws -> UInt   { throw nope() }
-    func decode(_ type: UInt8.Type)  throws -> UInt8  { throw nope() }
-    func decode(_ type: UInt16.Type) throws -> UInt16 { throw nope() }
-    func decode(_ type: UInt32.Type) throws -> UInt32 { throw nope() }
-    func decode(_ type: UInt64.Type) throws -> UInt64 { throw nope() }
-    func decode<T>(_ type: T.Type) throws -> T where T : Decodable { throw nope() }
-
-    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Nested containers are not supported"))
-    }
-
-    func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
-        throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Nested unkeyed containers are not supported"))
-    }
-
-    func superDecoder() throws -> Decoder {
-        return decoder
-    }
-}
-
-class SQLTableNestedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
-    let decoder: SQLTableDecoder
-    let codingPath: [CodingKey]
-    let allKeys: [Key] = []
-
-    init(decoder: SQLTableDecoder) {
-        self.decoder = decoder
-        self.codingPath = decoder.codingPath
-    }
-
-    func contains(_ key: Key) -> Bool { return true }
-
-    func decodeNil(forKey key: Key) throws -> Bool { return true }
-
-    func decode(_ type: String.Type, forKey key: Key) throws -> String { return "String" }
-    func decode(_ type: Double.Type, forKey key: Key) throws -> Double { return 1.2 }
-    func decode(_ type: Float.Type,  forKey key: Key) throws -> Float  { return 1.1 }
-    func decode(_ type: Bool.Type,   forKey key: Key) throws -> Bool   { return true }
-    func decode(_ type: Int.Type,    forKey key: Key) throws -> Int    { return 1 }
-    func decode(_ type: Int8.Type,   forKey key: Key) throws -> Int8   { return 1 }
-    func decode(_ type: Int16.Type,  forKey key: Key) throws -> Int16  { return 1 }
-    func decode(_ type: Int32.Type,  forKey key: Key) throws -> Int32  { return 1 }
-    func decode(_ type: Int64.Type,  forKey key: Key) throws -> Int64  { return 1 }
-    func decode(_ type: UInt.Type,   forKey key: Key) throws -> UInt   { return 1 }
-    func decode(_ type: UInt8.Type,  forKey key: Key) throws -> UInt8  { return 1 }
-    func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 { return 1 }
-    func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 { return 1 }
-    func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 { return 1 }
-
-    func decode<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> T {
-        let child = SQLTableDecoder(codingPath: codingPath + [key], parent: decoder)
-        let tried = try? T(from: child)
-        if let value = tried { return value }
-        if let value = SQLTable.placeholder(for: T.self) { return value }
-        return try T(from: child) // let it throw
-    }
-
-    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        let container = SQLTableNestedDecodingContainer<NestedKey>(decoder: decoder)
-        return KeyedDecodingContainer(container)
-    }
-
-    func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-        return SQLTableUnkeyedDecodingContainer(decoder: decoder)
-    }
-
-    func superDecoder() throws -> Decoder {
-        return decoder
-    }
-
-    func superDecoder(forKey key: Key) throws -> Decoder {
-        return decoder
+        let child = SQLTableDecoder(root: root, codingPath: codingPath)
+        do {
+            return try T(from: child)
+        } catch DecodingError.dataCorrupted(_) {
+            if let value = SQLTable.placeholder(for: T.self) { return value }
+            throw SQLError.missingPlaceholder(type)
+        }
     }
 }

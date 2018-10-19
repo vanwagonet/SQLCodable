@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7D781C8C217A81670046A83E /* SQLTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C8B217A81670046A83E /* SQLTableTests.swift */; };
 		7DCB7D7A2178F20C001B2DB0 /* SQLRowDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */; };
 		7DF400032172E840007E5F81 /* SQLCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400022172E840007E5F81 /* SQLCodableTests.swift */; };
 		7DF400052172E840007E5F81 /* SQLCodable.h in Headers */ = {isa = PBXBuildFile; fileRef = 7DF4FFF72172E840007E5F81 /* SQLCodable.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -32,6 +33,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7D781C8B217A81670046A83E /* SQLTableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTableTests.swift; sourceTree = "<group>"; };
 		7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLRowDecoder.swift; sourceTree = "<group>"; };
 		7DF400022172E840007E5F81 /* SQLCodableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLCodableTests.swift; sourceTree = "<group>"; };
 		7DF400042172E840007E5F81 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 				7DF400022172E840007E5F81 /* SQLCodableTests.swift */,
 				7DF4002721752620007E5F81 /* SQLDatabaseTests.swift */,
 				7DF400142172F8D9007E5F81 /* SQLTableDecoderTests.swift */,
+				7D781C8B217A81670046A83E /* SQLTableTests.swift */,
 			);
 			path = SQLCodableTests;
 			sourceTree = "<group>";
@@ -245,6 +248,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7DF400152172F8D9007E5F81 /* SQLTableDecoderTests.swift in Sources */,
+				7D781C8C217A81670046A83E /* SQLTableTests.swift in Sources */,
 				7DF4002821752620007E5F81 /* SQLDatabaseTests.swift in Sources */,
 				7DF400032172E840007E5F81 /* SQLCodableTests.swift in Sources */,
 			);

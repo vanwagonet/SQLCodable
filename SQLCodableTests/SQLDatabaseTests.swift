@@ -1,4 +1,5 @@
 import XCTest
+import SQLite3
 @testable import SQLCodable
 
 class SQLDatabaseTests: XCTestCase {
@@ -6,7 +7,7 @@ class SQLDatabaseTests: XCTestCase {
         .appendingPathComponent("SQLCodableTests.sqlite")
 
     override func tearDown() {
-        try! FileManager.default.removeItem(at: fileURL)
+        try? FileManager.default.removeItem(at: fileURL)
     }
 
     struct Person: SQLCodable {
@@ -18,6 +19,28 @@ class SQLDatabaseTests: XCTestCase {
             .index("id", on: [ CodingKeys.id ]),
             .index("uname", on: [ CodingKeys.name, CodingKeys.id ], unique: true),
         ]
+    }
+
+    func testCheck() {
+        let db = SQLDatabase(at: fileURL)
+        XCTAssertThrowsError(try db.check(5))
+    }
+
+    func testDisconnect() {
+        let db = SQLDatabase(at: fileURL)
+        XCTAssertNoThrow(try db.disconnect())
+        try! db.connect()
+        XCTAssertNoThrow(try db.disconnect())
+    }
+
+    func testQueryError() {
+        let db = SQLDatabase(at: fileURL)
+        XCTAssertThrowsError(try db.query([String: String].self, sql: "")) { error in
+            if case .sqliteError(let code, let msg) = error as! SQLError {
+                XCTAssertEqual(code, SQLITE_MISUSE)
+                XCTAssertEqual(msg, "not an error")
+            }
+        }
     }
 
     func testCreateTable() {

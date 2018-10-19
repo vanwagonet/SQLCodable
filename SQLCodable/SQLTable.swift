@@ -20,17 +20,18 @@ public struct SQLTable: Equatable {
         self.primaryKey = type.primaryKey.map { $0.stringValue } .sorted()
         let allKeys = self.indexes.flatMap { $0.columns } + self.primaryKey
         let invalidKeys = allKeys.filter { columns[$0] == nil }
-        guard invalidKeys.isEmpty else { throw SQLError.invalidColumns(invalidKeys) }
+        guard invalidKeys.isEmpty else { throw SQLError.invalidColumns(invalidKeys.sorted()) }
     }
 
-    private static var placeholders: [String: Decodable] = [:]
+    private static var placeholders: [Any] = []
 
-    public static func register<Field: Decodable>(placeholder: Field) {
-        placeholders[String(describing: Field.self)] = placeholder
+    public static func register<Field: Decodable>(placeholder value: Field) {
+        guard placeholder(for: Field.self) == nil else { return }
+        placeholders.append(value)
     }
 
     internal static func placeholder<Field: Decodable>(for: Field.Type) -> Field? {
-        guard let placeholder = placeholders[String(describing: Field.self)] else { return nil }
+        guard let placeholder = placeholders.first(where: { $0 is Field }) else { return nil }
         return placeholder as? Field
     }
 }

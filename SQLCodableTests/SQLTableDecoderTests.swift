@@ -107,6 +107,12 @@ class SQLTableDecoderTests: XCTestCase {
         let ose: StringEnum?
     }
     func testEnums() {
+        XCTAssertThrowsError(try SQLTable(for: Enums.self)) { error in
+            if case .missingPlaceholder(let missing) = error as! SQLError {
+                XCTAssert(missing is StringEnum.Type)
+            }
+        }
+
         SQLTable.register(placeholder: StringEnum.abcd)
         XCTAssertEqual(try SQLTable(for: Enums.self), SQLTable(
             columns: [

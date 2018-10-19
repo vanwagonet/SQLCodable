@@ -5,4 +5,6 @@ enum SQLError: Error {
     case sqliteError(Int32, String)
 
     case invalidColumns([String])
+    case missingPlaceholder(Any.Type)
+    case notRepresentable(String)
 }
