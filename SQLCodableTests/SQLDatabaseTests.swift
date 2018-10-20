@@ -15,9 +15,9 @@ class SQLDatabaseTests: XCTestCase {
         let name: String?
 
         static let primaryKey: [CodingKey] = [ CodingKeys.id, CodingKeys.name ]
-        static let indexes: [SQLIndex] = [
-            .index("id", on: [ CodingKeys.id ]),
-            .index("uname", on: [ CodingKeys.name, CodingKeys.id ], unique: true),
+        static let indexes = [
+            SQLIndex("id", on: [ CodingKeys.id ]),
+            SQLIndex("uname", on: [ CodingKeys.name, CodingKeys.id ], unique: true),
         ]
     }
 

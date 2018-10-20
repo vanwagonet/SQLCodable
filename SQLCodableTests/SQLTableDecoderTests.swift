@@ -4,13 +4,13 @@ import XCTest
 class SQLTableDecoderTests: XCTestCase {
     struct Strings: SQLCodable {
         let string: String
-        let optional: String?
+        let ostring: String?
     }
     func testStrings() {
         XCTAssertEqual(try SQLTable(for: Strings.self), SQLTable(
             columns: [
-                "string":   SQLColumn(type: .text, null: false),
-                "optional": SQLColumn(type: .text, null: true),
+                "string":  SQLColumn(type: .text, null: false),
+                "ostring": SQLColumn(type: .text, null: true),
             ],
             name: "Strings"
         ))
@@ -21,6 +21,8 @@ class SQLTableDecoderTests: XCTestCase {
         let double: Double
         let ofloat: Float?
         let odouble: Double?
+        let date: Date
+        let odate: Date?
     }
     func testFloats() {
         XCTAssertEqual(try SQLTable(for: Floats.self), SQLTable(
@@ -29,6 +31,8 @@ class SQLTableDecoderTests: XCTestCase {
                 "double":  SQLColumn(type: .real, null: false),
                 "ofloat":  SQLColumn(type: .real, null: true),
                 "odouble": SQLColumn(type: .real, null: true),
+                "date":    SQLColumn(type: .real, null: false),
+                "odate":   SQLColumn(type: .real, null: true),
             ],
             name: "Floats"
         ))

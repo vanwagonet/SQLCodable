@@ -8,7 +8,7 @@ class SQLTableTests: XCTestCase {
     struct BadKeyHaver: SQLCodable {
         static let primaryKey: [CodingKey] = [BadKeys.primary]
         static let indexes: [SQLIndex] = [
-            .index("bad", on: [BadKeys.index])
+            SQLIndex("bad", on: [BadKeys.index])
         ]
     }
     func testBadPrimaryKey() {

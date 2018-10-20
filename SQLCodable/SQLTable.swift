@@ -13,7 +13,7 @@ public struct SQLTable: Equatable {
         self.primaryKey = primaryKey.sorted()
     }
 
-    internal init<Model: SQLCodable>(for type: Model.Type) throws {
+    public init<Model: SQLCodable>(for type: Model.Type) throws {
         self.columns = try SQLTableDecoder().decode(type)
         self.indexes = type.indexes.sorted(by: { $0.name < $1.name })
         self.name = type.tableName
@@ -23,16 +23,14 @@ public struct SQLTable: Equatable {
         guard invalidKeys.isEmpty else { throw SQLError.invalidColumns(invalidKeys.sorted()) }
     }
 
-    private static var placeholders: [Any] = []
+    internal static var placeholders: [Any] = []
 
     public static func register<Field: Decodable>(placeholder value: Field) {
-        guard placeholder(for: Field.self) == nil else { return }
-        placeholders.append(value)
+        if placeholder(for: Field.self) == nil { placeholders.append(value) }
     }
 
     internal static func placeholder<Field: Decodable>(for: Field.Type) -> Field? {
-        guard let placeholder = placeholders.first(where: { $0 is Field }) else { return nil }
-        return placeholder as? Field
+        return placeholders.first(where: { $0 is Field }) as? Field
     }
 }
 
@@ -53,8 +51,14 @@ public struct SQLIndex: Equatable, Hashable {
     public let name: String
     public let unique: Bool
 
-    public static func index(_ name: String, on columns: [CodingKey], unique: Bool = false) -> SQLIndex {
-        return SQLIndex(columns: columns.map { $0.stringValue } .sorted(), name: name, unique: unique)
+    internal init(columns: [String], name: String, unique: Bool) {
+        self.columns = columns
+        self.name = name
+        self.unique = unique
+    }
+
+    public init(_ name: String, on columns: [CodingKey], unique: Bool = false) {
+        self.init(columns: columns.map { $0.stringValue } .sorted(), name: name, unique: unique)
     }
 }
 
@@ -73,5 +77,5 @@ struct SQLIndexInfo: Decodable {
 
 struct SQLIndexColumnInfo: Decodable {
     let name: String
-    let rank: Int32
+    let seqno: Int32
 }

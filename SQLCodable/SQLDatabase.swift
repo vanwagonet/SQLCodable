@@ -80,7 +80,7 @@ public class SQLDatabase {
         for info in indexInfo {
             guard info.origin == "c" else { continue }
             let cols = try query(SQLIndexColumnInfo.self, sql: "PRAGMA index_info(\(info.name))")
-            let columns = cols.sorted(by: { $0.rank < $1.rank }).map { $0.name }
+            let columns = cols.sorted(by: { $0.seqno < $1.seqno }).map { $0.name }
             indexes.append(SQLIndex(columns: columns, name: info.name, unique: info.unique))
         }
 
