@@ -10,7 +10,7 @@ class SQLDatabaseTests: XCTestCase {
         try? FileManager.default.removeItem(at: fileURL)
     }
 
-    struct Person: SQLCodable {
+    struct Person: Equatable, SQLCodable {
         let id: UInt32
         let name: String?
 
@@ -19,6 +19,12 @@ class SQLDatabaseTests: XCTestCase {
             SQLIndex("id", on: [ CodingKeys.id ]),
             SQLIndex("uname", on: [ CodingKeys.name, CodingKeys.id ], unique: true),
         ]
+
+        static func hasID(_ id: UInt32) -> SQLWhere {
+            return .is(CodingKeys.id, .equalTo, .value(id))
+        }
+
+        static let byName: [SQLOrder] = [.atoz(CodingKeys.name)]
     }
 
     func testCheck() {
@@ -49,5 +55,31 @@ class SQLDatabaseTests: XCTestCase {
         XCTAssertNil(try db.table(for: Person.self))
         XCTAssertNoThrow(try db.create(table: table))
         XCTAssertEqual(try db.table(for: Person.self), table)
+    }
+
+    func testInsert() {
+        let db = SQLDatabase(at: fileURL)
+        let person1 = Person(id: 1, name: "John Doe")
+        let person2 = Person(id: 2, name: "Fulano de Tal")
+        XCTAssertNoThrow(try db.create(table: SQLTable(for: Person.self)))
+        XCTAssertNoThrow(try db.insert(person1))
+        XCTAssertThrowsError(try db.insert(person1)) // duplicate
+        XCTAssertNoThrow(try db.insert(person2))
+        XCTAssertEqual(try db.select(Person.self), [person1, person2])
+    }
+
+    func testSelect() {
+        let db = SQLDatabase(at: fileURL)
+        let person1 = Person(id: 1, name: "John Doe")
+        let person2 = Person(id: 2, name: "Fulano de Tal")
+        XCTAssertNoThrow(try db.create(table: SQLTable(for: Person.self)))
+        XCTAssertNoThrow(try db.insert(person1))
+        XCTAssertNoThrow(try db.insert(person2))
+        XCTAssertEqual(try db.select(Person.self, order: Person.byName), [person2, person1])
+        XCTAssertEqual(try db.select(Person.self, limit: 1), [person1])
+        XCTAssertEqual(try db.select(Person.self, limit: 1, offset: 1), [person2])
+        XCTAssertEqual(try db.select(Person.self, order: Person.byName, limit: 1), [person2])
+        XCTAssertEqual(try db.select(Person.self, order: Person.byName, limit: 1, offset: 1), [person1])
+        XCTAssertEqual(try db.select(Person.self, where: Person.hasID(1)), [person1]) // no duplicates
     }
 }

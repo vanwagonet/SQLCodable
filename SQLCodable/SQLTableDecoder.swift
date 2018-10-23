@@ -145,7 +145,7 @@ class SQLTableUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     func decode(_ type: UInt32.Type) throws -> UInt32 { return 1 }
     func decode(_ type: UInt64.Type) throws -> UInt64 { return 1 }
 
-    func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
+    func decode<T: Decodable>(_ type: T.Type) throws -> T {
         let child = SQLTableDecoder(root: root, codingPath: codingPath)
         do {
             return try T(from: child)
@@ -155,7 +155,7 @@ class SQLTableUnkeyedDecodingContainer: UnkeyedDecodingContainer {
         }
     }
 
-    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
+    func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> {
         let container = SQLTableKeyedDecodingContainer<NestedKey>(root: root, codingPath: codingPath)
         return KeyedDecodingContainer(container)
     }

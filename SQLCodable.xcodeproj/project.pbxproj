@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		7D781C8C217A81670046A83E /* SQLTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C8B217A81670046A83E /* SQLTableTests.swift */; };
+		7D781C8E217E1F950046A83E /* SQLParameter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C8D217E1F950046A83E /* SQLParameter.swift */; };
+		7D781C90217E484E0046A83E /* SQLRowEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C8F217E484E0046A83E /* SQLRowEncoder.swift */; };
+		7D781C92217E5EEE0046A83E /* SQLWhere.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C91217E5EEE0046A83E /* SQLWhere.swift */; };
+		7D781C94217E83C10046A83E /* SQLOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C93217E83C10046A83E /* SQLOrder.swift */; };
+		7D781C98217E86120046A83E /* SQLColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C97217E86120046A83E /* SQLColumn.swift */; };
+		7D781C9A217E86830046A83E /* SQLIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D781C99217E86830046A83E /* SQLIndex.swift */; };
 		7DCB7D7A2178F20C001B2DB0 /* SQLRowDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */; };
 		7DF400032172E840007E5F81 /* SQLCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF400022172E840007E5F81 /* SQLCodableTests.swift */; };
 		7DF400052172E840007E5F81 /* SQLCodable.h in Headers */ = {isa = PBXBuildFile; fileRef = 7DF4FFF72172E840007E5F81 /* SQLCodable.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -34,6 +40,12 @@
 
 /* Begin PBXFileReference section */
 		7D781C8B217A81670046A83E /* SQLTableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTableTests.swift; sourceTree = "<group>"; };
+		7D781C8D217E1F950046A83E /* SQLParameter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLParameter.swift; sourceTree = "<group>"; };
+		7D781C8F217E484E0046A83E /* SQLRowEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLRowEncoder.swift; sourceTree = "<group>"; };
+		7D781C91217E5EEE0046A83E /* SQLWhere.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLWhere.swift; sourceTree = "<group>"; };
+		7D781C93217E83C10046A83E /* SQLOrder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLOrder.swift; sourceTree = "<group>"; };
+		7D781C97217E86120046A83E /* SQLColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLColumn.swift; sourceTree = "<group>"; };
+		7D781C99217E86830046A83E /* SQLIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLIndex.swift; sourceTree = "<group>"; };
 		7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLRowDecoder.swift; sourceTree = "<group>"; };
 		7DF400022172E840007E5F81 /* SQLCodableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLCodableTests.swift; sourceTree = "<group>"; };
 		7DF400042172E840007E5F81 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -116,11 +128,17 @@
 				7DF4FFF82172E840007E5F81 /* Info.plist */,
 				7DF4FFF72172E840007E5F81 /* SQLCodable.h */,
 				7DF400102172EFD3007E5F81 /* SQLCodable.swift */,
+				7D781C97217E86120046A83E /* SQLColumn.swift */,
 				7DF400232175231E007E5F81 /* SQLDatabase.swift */,
 				7DF40025217523BC007E5F81 /* SQLError.swift */,
+				7D781C99217E86830046A83E /* SQLIndex.swift */,
+				7D781C93217E83C10046A83E /* SQLOrder.swift */,
+				7D781C8D217E1F950046A83E /* SQLParameter.swift */,
 				7DCB7D792178F20C001B2DB0 /* SQLRowDecoder.swift */,
+				7D781C8F217E484E0046A83E /* SQLRowEncoder.swift */,
 				7DF4000E2172E922007E5F81 /* SQLTable.swift */,
 				7DF400122172F0C1007E5F81 /* SQLTableDecoder.swift */,
+				7D781C91217E5EEE0046A83E /* SQLWhere.swift */,
 			);
 			path = SQLCodable;
 			sourceTree = "<group>";
@@ -236,10 +254,16 @@
 			files = (
 				7DF400132172F0C1007E5F81 /* SQLTableDecoder.swift in Sources */,
 				7DF400242175231E007E5F81 /* SQLDatabase.swift in Sources */,
+				7D781C92217E5EEE0046A83E /* SQLWhere.swift in Sources */,
+				7D781C98217E86120046A83E /* SQLColumn.swift in Sources */,
 				7DCB7D7A2178F20C001B2DB0 /* SQLRowDecoder.swift in Sources */,
+				7D781C94217E83C10046A83E /* SQLOrder.swift in Sources */,
 				7DF4000F2172E922007E5F81 /* SQLTable.swift in Sources */,
 				7DF40026217523BC007E5F81 /* SQLError.swift in Sources */,
 				7DF400112172EFD3007E5F81 /* SQLCodable.swift in Sources */,
+				7D781C9A217E86830046A83E /* SQLIndex.swift in Sources */,
+				7D781C90217E484E0046A83E /* SQLRowEncoder.swift in Sources */,
+				7D781C8E217E1F950046A83E /* SQLParameter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

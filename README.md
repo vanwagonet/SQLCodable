@@ -3,8 +3,8 @@
 
 - [x] Generate table definitions
 - [x] Generate create statements
-- [ ] Generate insert statements
-- [ ] Generate select statements
+- [x] Generate insert statements
+- [x] Generate select statements
 - [ ] Generate update statements
 - [ ] Generate delete statements
 - [x] Support `Codable` enums & OptionSet

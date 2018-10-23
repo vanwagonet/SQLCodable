@@ -57,7 +57,7 @@ class SQLRowDecoder: Decoder {
         return try json.decode(T.self, from: blob(key))
     }
 
-    func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
+    func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
         guard codingPath.isEmpty else {
             throw SQLError.notRepresentable("A nested container can't be decoded. Fall back to JSONEncoder.")
         }
