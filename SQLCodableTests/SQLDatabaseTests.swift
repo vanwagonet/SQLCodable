@@ -27,6 +27,8 @@ class SQLDatabaseTests: XCTestCase {
         static let byName: [SQLOrder] = [.atoz(CodingKeys.name)]
     }
 
+    struct NoPrimary: SQLCodable {}
+
     func testCheck() {
         let db = SQLDatabase(at: fileURL)
         XCTAssertThrowsError(try db.check(5))
@@ -81,5 +83,29 @@ class SQLDatabaseTests: XCTestCase {
         XCTAssertEqual(try db.select(Person.self, order: Person.byName, limit: 1), [person2])
         XCTAssertEqual(try db.select(Person.self, order: Person.byName, limit: 1, offset: 1), [person1])
         XCTAssertEqual(try db.select(Person.self, where: Person.hasID(1)), [person1]) // no duplicates
+    }
+
+    func testDelete() {
+        let db = SQLDatabase(at: fileURL)
+        let person1 = Person(id: 1, name: "John Doe")
+        let person2 = Person(id: 2, name: "Fulano de Tal")
+        let person3 = Person(id: 3, name: nil)
+        XCTAssertNoThrow(try db.create(table: SQLTable(for: Person.self)))
+
+        XCTAssertNoThrow(try db.insert(person1))
+        XCTAssertNoThrow(try db.insert(person2))
+        XCTAssertNoThrow(try db.insert(person3))
+        XCTAssertEqual(try db.delete(person3), 1)
+        XCTAssertEqual(try db.delete(person3), 0)
+        XCTAssertEqual(try db.delete(Person.self, where: Person.hasID(3)), 0)
+        XCTAssertEqual(try db.delete(Person.self, where: Person.hasID(1)), 1)
+        XCTAssertEqual(try db.select(Person.self), [person2])
+
+        XCTAssertNoThrow(try db.insert(person1))
+        XCTAssertNoThrow(try db.insert(person3))
+        XCTAssertEqual(try db.delete(Person.self), 3)
+        XCTAssertEqual(try db.select(Person.self), [])
+
+        XCTAssertThrowsError(try db.delete(NoPrimary()))
     }
 }

@@ -27,8 +27,10 @@ public class SQLDatabase {
         db = nil
     }
 
-    func exec(_ sql: String, params: [SQLParameter] = []) throws {
+    @discardableResult
+    func exec(_ sql: String, params: [SQLParameter] = []) throws -> Int32 {
         let _ = try query([String: String].self, sql: sql, params: params)
+        return sqlite3_changes(db)
     }
 
     func query<T: Decodable>(_ type: T.Type, sql: String, params: [SQLParameter] = []) throws -> [T] {
@@ -89,11 +91,11 @@ public class SQLDatabase {
         return SQLTable(columns: columns, indexes: indexes, name: type.tableName, primaryKey: primaryKey)
     }
 
-    public func insert<Model: SQLCodable>(_ model: Model) throws {
+    public func insert<Model: SQLCodable>(_ model: Model) throws -> Int32 {
         let (columns, values) = try SQLRowEncoder().encode(model)
         let cols = columns.map(id).joined(separator: ", ")
         let vals = columns.map({ _ in "?" }).joined(separator: ", ")
-        try exec("INSERT INTO \(id(Model.tableName)) (\(cols)) VALUES (\(vals))", params: values)
+        return try exec("INSERT INTO \(id(Model.tableName)) (\(cols)) VALUES (\(vals))", params: values)
     }
 
     public func select<Model: SQLCodable>(_ type: Model.Type, where predicate: SQLWhere? = nil, order: [SQLOrder] = [], limit: UInt64 = 0, offset: UInt64 = 0) throws -> [Model] {
@@ -109,5 +111,26 @@ public class SQLDatabase {
             if offset > 0 { sql += " OFFSET \(offset)" }
         }
         return try query(type, sql: sql, params: predicate?.params() ?? [])
+    }
+
+    public func delete<Model: SQLCodable>(_ type: Model.Type, where predicate: SQLWhere? = nil) throws -> Int32 {
+        var sql = "DELETE FROM \(id(Model.tableName))"
+        if let clause = predicate?.clause() {
+            sql += " WHERE \(clause)"
+        }
+        return try exec(sql, params: predicate?.params() ?? [])
+    }
+
+    public func delete<Model: SQLCodable>(_ model: Model) throws -> Int32 {
+        guard !Model.primaryKey.isEmpty else {
+            throw SQLError.noPrimaryKey(Model.self)
+        }
+        let (columns, values) = try SQLRowEncoder().encode(model)
+        return try delete(Model.self, where: .and(Model.primaryKey.map { key in
+            if let i = columns.firstIndex(of: key.stringValue) {
+                return SQLWhere.is(key, .equalTo, values[i])
+            }
+            return SQLWhere.null(key)
+        }))
     }
 }

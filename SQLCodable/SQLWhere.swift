@@ -13,13 +13,25 @@ public enum SQLOperator: String {
 public indirect enum SQLWhere {
     case and(SQLWhere, SQLWhere)
     case `in`(CodingKey, [SQLParameter])
+    case `is`(CodingKey, SQLOperator, SQLParameter)
     case not(SQLWhere)
     case null(CodingKey)
     case or(SQLWhere, SQLWhere)
-    case `is`(CodingKey, SQLOperator, SQLParameter)
 
     public func and(_ other: SQLWhere) -> SQLWhere { return .and(self, other) }
     public func or(_ other: SQLWhere) -> SQLWhere { return .or(self, other) }
+
+    public static func and(_ list: [SQLWhere]) -> SQLWhere? {
+        var predicate: SQLWhere?
+        for item in list {
+            if let head = predicate {
+                predicate = head.and(item)
+            } else {
+                predicate = item
+            }
+        }
+        return predicate
+    }
 
     func clause() -> String {
         switch self {
