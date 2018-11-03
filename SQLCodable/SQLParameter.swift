@@ -12,7 +12,7 @@ func id(_ key: CodingKey) -> String {
     return id(key.stringValue)
 }
 
-public enum SQLParameter {
+public enum SQLParameter: Equatable {
     case null
     case blob(Data)
     case int(Int64)

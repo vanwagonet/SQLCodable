@@ -56,18 +56,20 @@ public class SQLDatabase {
         return rows
     }
 
-    public func create(table: SQLTable) throws {
+    @discardableResult
+    public func create(table: SQLTable) throws -> Int32 {
         var definitions = table.columns.map { name, col in
             return "\(id(name)) \(col.type.rawValue) \(col.null ? "NULL" : "NOT NULL")"
         }.sorted()
         if !table.primaryKey.isEmpty {
             definitions.append("PRIMARY KEY (\(table.primaryKey.map(id).joined(separator: ", ")))")
         }
-        try exec("CREATE TABLE \(id(table.name)) (\(definitions.joined(separator: ", ")))")
+        var count = try exec("CREATE TABLE \(id(table.name)) (\(definitions.joined(separator: ", ")))")
 
         for index in table.indexes {
-            try exec("CREATE\(index.unique ? " UNIQUE" : "") INDEX \(id(index.name)) ON \(id(table.name)) (\(index.columns.map(id).joined(separator: ", ")))")
+            count += try exec("CREATE\(index.unique ? " UNIQUE" : "") INDEX \(id(index.name)) ON \(id(table.name)) (\(index.columns.map(id).joined(separator: ", ")))")
         }
+        return count
     }
 
     public func table<Model: SQLCodable>(for type: Model.Type) throws -> SQLTable? {
@@ -91,6 +93,7 @@ public class SQLDatabase {
         return SQLTable(columns: columns, indexes: indexes, name: type.tableName, primaryKey: primaryKey)
     }
 
+    @discardableResult
     public func insert<Model: SQLCodable>(_ model: Model) throws -> Int32 {
         let props = try SQLRowEncoder().encode(model)
         var cols = [String]()
@@ -118,6 +121,7 @@ public class SQLDatabase {
         return try query(type, sql: sql, params: predicate?.params() ?? [])
     }
 
+    @discardableResult
     public func update<Model: SQLCodable>(_ type: Model.Type, set: [String: SQLParameter], where predicate: SQLWhere? = nil) throws -> Int32 {
         guard !set.isEmpty else { return 0 }
         var sql = "UPDATE \(id(Model.tableName)) SET"
@@ -133,10 +137,11 @@ public class SQLDatabase {
         return try exec(sql, params: params)
     }
 
+    @discardableResult
     public func update<Model: SQLCodable>(_ model: Model) throws -> Int32 {
         var set = try SQLRowEncoder().encode(model)
         guard let clause = SQLWhere.and(Model.primaryKey.map { key in
-            if let value = set.removeValue(forKey: key.stringValue) {
+            if let value = set.removeValue(forKey: key.stringValue), value != .null {
                 return SQLWhere.is(key, .equalTo, value)
             }
             return SQLWhere.null(key)
@@ -146,6 +151,7 @@ public class SQLDatabase {
         return try update(Model.self, set: set, where: clause)
     }
 
+    @discardableResult
     public func delete<Model: SQLCodable>(_ type: Model.Type, where predicate: SQLWhere? = nil) throws -> Int32 {
         var sql = "DELETE FROM \(id(Model.tableName))"
         if let clause = predicate?.clause() {
@@ -154,10 +160,11 @@ public class SQLDatabase {
         return try exec(sql, params: predicate?.params() ?? [])
     }
 
+    @discardableResult
     public func delete<Model: SQLCodable>(_ model: Model) throws -> Int32 {
         let set = try SQLRowEncoder().encode(model)
         guard let clause = SQLWhere.and(Model.primaryKey.map { key in
-            if let value = set[key.stringValue] {
+            if let value = set[key.stringValue], value != .null {
                 return SQLWhere.is(key, .equalTo, value)
             }
             return SQLWhere.null(key)

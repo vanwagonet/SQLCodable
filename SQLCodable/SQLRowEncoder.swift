@@ -23,7 +23,10 @@ class SQLRowEncoder: Encoder {
         add(.value(String(data: data, encoding: .utf8) ?? ""), key)
     }
 
-    func encode<Model: Encodable>(_ model: Model) throws -> [String: SQLParameter] {
+    func encode<Model: SQLCodable>(_ model: Model) throws -> [String: SQLParameter] {
+        for (key, value) in try SQLTable(for: Model.self).columns {
+            if value.null { values[key] = .null }
+        }
         try model.encode(to: self)
         return values
     }

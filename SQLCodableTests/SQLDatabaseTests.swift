@@ -3,7 +3,7 @@ import SQLite3
 @testable import SQLCodable
 
 class SQLDatabaseTests: XCTestCase {
-    let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         .appendingPathComponent("SQLCodableTests.sqlite")
 
     override func tearDown() {
@@ -132,5 +132,23 @@ class SQLDatabaseTests: XCTestCase {
         XCTAssertEqual(try db.select(Person.self), [])
 
         XCTAssertThrowsError(try db.delete(NoPrimary()))
+    }
+
+    func testConcurrency() {
+        let db = SQLDatabase(at: fileURL)
+        XCTAssertNoThrow(try db.create(table: SQLTable(for: Simple.self)))
+        let max: Int32 = 100
+        let queue = OperationQueue()
+        queue.isSuspended = true
+        queue.maxConcurrentOperationCount = Int(max)
+        for i in 1...max {
+            XCTAssertNoThrow(try db.insert(Simple(id: i, value: nil)))
+            queue.addOperation { try! db.update(Simple(id: i, value: "\(i)")) }
+        }
+        queue.isSuspended = false
+        queue.waitUntilAllOperationsAreFinished()
+        for i in 1...max {
+            XCTAssertEqual(try db.select(Simple.self, where: Simple.hasID(i)).first, Simple(id: i, value: "\(i)"))
+        }
     }
 }

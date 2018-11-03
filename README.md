@@ -12,3 +12,7 @@
 - [x] Support arrays
 - [x] Support indexes
 - [ ] Support foreign keys
+
+- [ ] Subscription
+- [x] Concurrency
+- [ ] Conflict resolution
