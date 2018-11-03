@@ -4,9 +4,8 @@ class SQLRowEncoder: Encoder {
     let codingPath: [CodingKey]
     var userInfo: [CodingUserInfoKey: Any] = [:]
 
-    var columns = [String]()
     let root: SQLRowEncoder?
-    var values = [SQLParameter]()
+    var values = [String: SQLParameter]()
 
     init(root: SQLRowEncoder? = nil, codingPath: [CodingKey] = []) {
         self.codingPath = codingPath
@@ -14,8 +13,7 @@ class SQLRowEncoder: Encoder {
     }
 
     func add(_ param: SQLParameter, _ key: CodingKey) {
-        columns.append(key.stringValue)
-        values.append(param)
+        values[key.stringValue] = param
     }
 
     func json<Model: Encodable>(_ value: Model, _ key: CodingKey) throws {
@@ -25,9 +23,9 @@ class SQLRowEncoder: Encoder {
         add(.value(String(data: data, encoding: .utf8) ?? ""), key)
     }
 
-    func encode<Model: Encodable>(_ model: Model) throws -> ([String], [SQLParameter]) {
+    func encode<Model: Encodable>(_ model: Model) throws -> [String: SQLParameter] {
         try model.encode(to: self)
-        return (columns, values)
+        return values
     }
 
     func container<Key: CodingKey>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> {
@@ -54,9 +52,7 @@ class SQLRowKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtoc
         self.root = root
     }
 
-    func encodeNil(forKey key: Key) throws {
-        // Omit nulls, that will be the default value since it is missing.
-    }
+    func encodeNil(forKey key: Key) throws { root.add(.null, key) }
 
     func encode(_ value: String, forKey key: Key) throws { root.add(.value(value), key) }
     func encode(_ value: Double, forKey key: Key) throws { root.add(.value(value), key) }
@@ -112,9 +108,7 @@ class SQLRowSingleValueEncodingContainer: SingleValueEncodingContainer {
         root.add(param, key)
     }
 
-    func encodeNil() throws {
-        // Omit nulls, that will be the default value since it is missing.
-    }
+    func encodeNil() throws { try add(.null) }
 
     func encode(_ value: String) throws { try add(.value(value)) }
     func encode(_ value: Double) throws { try add(.value(value)) }

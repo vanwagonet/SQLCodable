@@ -13,6 +13,7 @@ func id(_ key: CodingKey) -> String {
 }
 
 public enum SQLParameter {
+    case null
     case blob(Data)
     case int(Int64)
     case real(Double)
@@ -36,6 +37,8 @@ public enum SQLParameter {
 
     func bind(to statement: OpaquePointer?, index: Int32) -> Int32 {
         switch self {
+        case .null:
+            return sqlite3_bind_null(statement, index)
         case .blob(let value):
             return value.withUnsafeBytes { bytes in
                 sqlite3_bind_blob(statement, index, bytes, Int32(value.count), SQLITE_TRANSIENT)

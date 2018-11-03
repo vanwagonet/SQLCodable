@@ -5,7 +5,7 @@
 - [x] Generate create statements
 - [x] Generate insert statements
 - [x] Generate select statements
-- [ ] Generate update statements
+- [x] Generate update statements
 - [x] Generate delete statements
 - [x] Support `Codable` enums & OptionSet
 - [x] Support nested structs

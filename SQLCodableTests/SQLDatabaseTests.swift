@@ -27,6 +27,16 @@ class SQLDatabaseTests: XCTestCase {
         static let byName: [SQLOrder] = [.atoz(CodingKeys.name)]
     }
 
+    struct Simple: Equatable, SQLCodable {
+        let id: Int32
+        let value: String?
+
+        static let primaryKey: [CodingKey] = [ CodingKeys.id ]
+        static func hasID(_ id: Int32) -> SQLWhere {
+            return .is(CodingKeys.id, .equalTo, .value(id))
+        }
+    }
+
     struct NoPrimary: SQLCodable {}
 
     func testCheck() {
@@ -83,6 +93,21 @@ class SQLDatabaseTests: XCTestCase {
         XCTAssertEqual(try db.select(Person.self, order: Person.byName, limit: 1), [person2])
         XCTAssertEqual(try db.select(Person.self, order: Person.byName, limit: 1, offset: 1), [person1])
         XCTAssertEqual(try db.select(Person.self, where: Person.hasID(1)), [person1]) // no duplicates
+    }
+
+    func testUpdate() {
+        let db = SQLDatabase(at: fileURL)
+        XCTAssertNoThrow(try db.create(table: SQLTable(for: Simple.self)))
+        let simple = Simple(id: 1, value: "original")
+        XCTAssertNoThrow(try db.insert(simple))
+        let updated = Simple(id: 1, value: nil)
+        XCTAssertEqual(try db.update(updated), 1)
+        XCTAssertEqual(try db.select(Simple.self, where: Simple.hasID(1)).first, updated)
+        XCTAssertEqual(try db.update(Simple.self, set: [:], where: Simple.hasID(2)), 0)
+        XCTAssertEqual(try db.update(Simple.self, set: ["value":.text("updated")], where: Simple.hasID(1)), 1)
+        XCTAssertEqual(try db.select(Simple.self, where: Simple.hasID(1)).first, Simple(id: 1, value: "updated"))
+
+        XCTAssertThrowsError(try db.update(NoPrimary()))
     }
 
     func testDelete() {

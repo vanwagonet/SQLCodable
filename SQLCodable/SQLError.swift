@@ -6,6 +6,6 @@ enum SQLError: Error {
 
     case invalidColumns([String])
     case missingPlaceholder(Any.Type)
-    case noPrimaryKey(Any.Type)
+    case noPrimaryKey(SQLCodable)
     case notRepresentable(String)
 }
